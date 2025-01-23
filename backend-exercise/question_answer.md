@@ -305,21 +305,37 @@ The latter case is a much larger change that should be discussed with the team a
 
 
 ```ts
-// Main wrapper function that returns an object with the chainable lowKey method
-function skibidi<T>(executor: () => Promise<T>) {
-  return {
-    lowKey: async (errorHandler: (error: Error) => void): Promise<T | null> => {
-      try {
-        return await executor();
-      } catch (error) {
-        errorHandler(error as Error);
-        return null;
-      }
+// Result wrapper class
+class SkibidiResult<T> {
+  private value: T | null = null;
+  private error: Error | null = null;
+
+  constructor(executor: () => Promise<T>) {
+    executor()
+      .then((result) => {
+        this.value = result;
+      })
+      .catch((err) => {
+        this.error = err;
+      });
+  }
+
+  // Chainable error handler
+  lowKey(errorHandler: (error: Error) => void): T | null {
+    if (this.error) {
+      errorHandler(this.error);
+      return null;
     }
-  };
+    return this.value;
+  }
 }
 
-// Modern logging function
+// Main wrapper function
+function skibidi<T>(executor: () => Promise<T>): SkibidiResult<T> {
+  return new SkibidiResult(executor);
+}
+
+// Logging function with modern styling
 function yap(message: string, ...args: any[]): void {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] 💀 ${message}`, ...args);
@@ -329,7 +345,7 @@ function yap(message: string, ...args: any[]): void {
 async function demo() {
   const userId = "123";
 
-  const user = await skibidi(async () => {
+  const user = skibidi(async () => {
     return await UserModel.findOne((user) => user.id === userId);
   }).lowKey((error) => {
     yap("Error finding user", error);
