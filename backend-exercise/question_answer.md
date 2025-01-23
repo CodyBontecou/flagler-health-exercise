@@ -275,7 +275,7 @@ WHERE
   AND clinicId = 123
 ```
 
-and makes a pull request to change it to
+> and makes a pull request to change it to
 
 ```sql
 SELECT
@@ -288,8 +288,7 @@ WHERE
   clinicId = 123
 ```
 
-You did not write the original SQL statement (that developer no longer works here). You are tagged in the pull request for code review.
-
+> You did not write the original SQL statement (that developer no longer works here). You are tagged in the pull request for code review.
 What is your response to your team member’s change request?
 
 ### Response
