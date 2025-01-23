@@ -154,6 +154,18 @@ async function getTableData(filters) {
 }
 ```
 
+Response with pre-defined dbList:
+
+```js
+  [
+    { patient_id: 1, a: '1', b: '2', c: null },
+    { patient_id: 2, a: null, b: null, c: null },
+    { patient_id: 3, a: '3', b: null, c: null },
+    { patient_id: 4, a: null, b: null, c: null },
+    { patient_id: 5, a: null, b: null, c: null }
+  ]
+```
+
 ## Q1d
 
 ### Current schema
