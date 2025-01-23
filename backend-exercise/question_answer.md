@@ -223,6 +223,41 @@ Cons:
 - Map queries can be less intuitive
 - Limited MongoDB Map indexing capabilities
 
+#### Reason
+
+The Map type in MongoDB allows storing all attributes in a single document, reducing the number of documents needed per patient from N (number of attributes) to 1.
+
+```js
+// Original: Multiple rows for one patient
+{
+  clinic_id: clinicA,
+  patient_id: 123,
+  field_nm: "a",
+  field_value: "1"
+}
+{
+  clinic_id: clinicA,
+  patient_id: 123,
+  field_nm: "b",
+  field_value: "2"
+}
+{
+  clinic_id: clinicA,
+  patient_id: 123,
+  field_nm: "c",
+  field_value: "3"
+}
+
+// Proposed: Single document per patient using Map
+{
+  clinic_id: clinicA,
+  attributes: {
+    "a": "1",
+    "b": "2",
+    "c": "3"
+  }
+}
+```
 
 ## Q2
 
