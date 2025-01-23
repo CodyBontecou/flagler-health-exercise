@@ -306,11 +306,11 @@ The latter case is a much larger change that should be discussed with the team a
 
 ```ts
 // Result wrapper class
-class SkibidiResult<T> {
-  private value: T | null = null;
-  private error: Error | null = null;
+class SkibidiResult {
+  private value = null;
+  private error = null;
 
-  constructor(executor: () => Promise<T>) {
+  constructor(executor) {
     executor()
       .then((result) => {
         this.value = result;
@@ -321,7 +321,7 @@ class SkibidiResult<T> {
   }
 
   // Chainable error handler
-  lowKey(errorHandler: (error: Error) => void): T | null {
+  lowKey(errorHandler) {
     if (this.error) {
       errorHandler(this.error);
       return null;
@@ -331,12 +331,12 @@ class SkibidiResult<T> {
 }
 
 // Main wrapper function
-function skibidi<T>(executor: () => Promise<T>): SkibidiResult<T> {
+function skibidi(executor){
   return new SkibidiResult(executor);
 }
 
 // Logging function with modern styling
-function yap(message: string, ...args: any[]): void {
+function yap(message, ...args) {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] 💀 ${message}`, ...args);
 }
