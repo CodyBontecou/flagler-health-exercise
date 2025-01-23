@@ -65,7 +65,42 @@ async function getTableData(filters, page = 1, limit = 100) {
 ```
 
 ### Data streaming
+
+```js
+async function getTableDataStream(filters) {
+    const cursor = ResultModel.find(filters).cursor();
+    const dynamicList = [];
+    let currentPatient = null;
+
+    for await (const doc of cursor) {
+        if (!currentPatient || currentPatient.patient_id !== doc.patient_id) {
+            currentPatient = { patient_id: doc.patient_id, fields: new Map() };
+            dynamicList.push(currentPatient);
+        }
+        currentPatient.fields.set(doc.field_nm, doc.field_value);
+    }
+    return dynamicList;
+}
+```
+
 ### Caching layer
+
+```js
+const NodeCache = require('node-cache');
+const resultCache = new NodeCache({ stdTTL: 600 }); // 10 minute TTL
+
+async function getCachedTableData(filters) {
+    const cacheKey = JSON.stringify(filters);
+    let data = resultCache.get(cacheKey);
+
+    if (!data) {
+        data = await getTableData(filters);
+        resultCache.set(cacheKey, data);
+    }
+
+    return data;
+}
+```
 
 ## Q1b
 
