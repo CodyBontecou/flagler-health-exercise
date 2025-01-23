@@ -1,0 +1,250 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Front End Exercise</title>
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="https://unpkg.com/@vueuse/shared"></script>
+        <script src="https://unpkg.com/@vueuse/core"></script>
+
+        <style type="text/css">
+            html {
+                margin: 0;
+                padding: 0;
+                background: linear-gradient(
+                    45deg,
+                    hsla(197, 100%, 63%, 1) 0%,
+                    hsla(294, 100%, 55%, 1) 100%
+                );
+            }
+            body {
+                margin: 0;
+                padding: 10px;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .grid-item {
+                padding: 10px;
+                background: hsla(197, 100%, 63%, 1);
+                border-radius: 15px;
+                min-height: 100px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        </style>
+        <script type="text/javascript">
+            /////////////////
+            // DO NOT EDIT //
+            /////////////////
+
+            const fetchData = (() => {
+                const fakeData = []
+                const dataCount = Math.floor(Math.random() * 200) + 50
+
+                for (let i = 0; i < dataCount; i++) {
+                    fakeData.push({
+                        id: i + 1,
+                        span:
+                            Math.random() > 0.5
+                                ? Math.floor(Math.random() * 3) + 1
+                                : 1,
+                    })
+                }
+
+                return (startIndex, endIndex) => {
+                    const p = new Promise((resolve, reject) => {
+                        setTimeout(() => {
+                            resolve({
+                                length: fakeData.length,
+                                data: fakeData.slice(startIndex, endIndex),
+                            })
+                        }, 333)
+                    })
+                    return p
+                }
+            })()
+
+            ////////////////////////
+            // END of DO NOT EDIT //
+            ////////////////////////
+        </script>
+    </head>
+    <body>
+        <div class="grid" id="app">
+            <template v-for="(row, rowIndex) in sortedData" :key="rowIndex">
+                <template
+                    v-for="cell in row"
+                    :key="cell?.id || `empty-${rowIndex}`"
+                >
+                    <div
+                        v-if="cell"
+                        :style="{ 'grid-column': `span ${cell.span}` }"
+                        class="grid-item"
+                    >
+                        {{ cell.id }}
+                    </div>
+                </template>
+            </template>
+            <button ref="loadButton" id="load" @click="getNextPage">
+                Load more…
+            </button>
+        </div>
+        <script type="text/javascript">
+            const {
+                createApp,
+                ref,
+                computed,
+                nextTick,
+                onMounted,
+                onUnmounted,
+                watch,
+                useTemplateRef,
+            } = Vue
+            const { useElementVisibility } = VueUse
+
+            function createInitialRows(data, maxSpan = 3) {
+                const rows = []
+                let currentRow = []
+                let currentSpanSum = 0
+
+                for (const item of data) {
+                    if (currentSpanSum + item.span > maxSpan) {
+                        rows.push(currentRow.filter(item => item !== null))
+                        currentRow = []
+                        currentSpanSum = 0
+                    }
+
+                    currentRow.push(item)
+                    currentSpanSum += item.span
+
+                    if (currentSpanSum === maxSpan) {
+                        rows.push(currentRow.filter(item => item !== null))
+                        currentRow = []
+                        currentSpanSum = 0
+                    }
+                }
+
+                if (currentRow.length > 0) {
+                    rows.push(currentRow.filter(item => item !== null))
+                }
+
+                return rows
+            }
+
+            function optimizeLayout(initialRows, maxSpan = 3) {
+                // Flatten and deduplicate items
+                const items = initialRows
+                    .flat()
+                    .filter(item => item !== null)
+                    .filter(
+                        (item, index, self) =>
+                            index ===
+                            self.findIndex(t => t && item && t.id === item.id)
+                    )
+
+                const optimizedRows = []
+
+                // Helper function to calculate current span sum of a row
+                const getRowSpanSum = row => {
+                    return row.reduce(
+                        (sum, item) => sum + (item ? item.span : 0),
+                        0
+                    )
+                }
+
+                // Helper function to find first row that can fit the item
+                const findRowWithSpace = itemSpan => {
+                    return optimizedRows.findIndex(row => {
+                        const currentSpanSum = getRowSpanSum(row)
+                        return currentSpanSum + itemSpan <= maxSpan
+                    })
+                }
+
+                // Process each item
+                for (const item of items) {
+                    // Try to find existing row with enough space
+                    const existingRowIndex = findRowWithSpace(item.span)
+
+                    if (existingRowIndex !== -1) {
+                        // Add to existing row
+                        const row = optimizedRows[existingRowIndex]
+                        const nullIndex = row.indexOf(null)
+                        if (nullIndex !== -1) {
+                            // Replace nulls with the item
+                            row.splice(
+                                nullIndex,
+                                item.span,
+                                item,
+                                ...Array(item.span - 1).fill(null)
+                            )
+                        }
+                    } else {
+                        // Create new row
+                        const newRow = Array(maxSpan).fill(null)
+                        newRow.splice(
+                            0,
+                            item.span,
+                            item,
+                            ...Array(item.span - 1).fill(null)
+                        )
+                        optimizedRows.push(newRow)
+                    }
+                }
+
+                return optimizedRows
+            }
+
+            createApp({
+                setup() {
+                    const columns = 3
+                    const pageSize = 10
+                    const lastFetchedIndex = ref(0)
+                    const data = ref({ length: 0, data: [] })
+                    const loadButton = useTemplateRef('loadButton')
+                    const buttonIsVisible = useElementVisibility(loadButton)
+
+                    const sortedData = computed(() => {
+                        const initialLayout = createInitialRows(data.value.data)
+                        return optimizeLayout(initialLayout)
+                    })
+
+                    async function getNextPage() {
+                        const d = await fetchData(
+                            lastFetchedIndex.value,
+                            lastFetchedIndex.value + pageSize
+                        )
+                        lastFetchedIndex.value =
+                            lastFetchedIndex.value + d.data.length
+                        data.value = {
+                            length: d.length,
+                            data: [...data.value.data, ...d.data],
+                        }
+                    }
+
+                    onMounted(async () => {
+                        await getNextPage()
+
+                        if (buttonIsVisible.value) {
+                            await getNextPage()
+                        }
+                    })
+
+                    watch(buttonIsVisible, () => getNextPage())
+
+                    return {
+                        data,
+                        sortedData,
+                        lastFetchedIndex,
+                        getNextPage,
+                    }
+                },
+            }).mount('#app')
+        </script>
+    </body>
+</html>
