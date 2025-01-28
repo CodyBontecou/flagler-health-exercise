@@ -30,7 +30,7 @@
                 padding: 10px;
                 background: hsla(197, 100%, 63%, 1);
                 border-radius: 15px;
-                min-height: 100px;
+
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -104,7 +104,6 @@
                 watch,
                 useTemplateRef,
             } = Vue
-            const { useElementVisibility } = VueUse
 
             function createInitialRows(data, maxSpan = 3) {
                 const rows = []
@@ -240,7 +239,7 @@
                         observer.observe(loadButton)
 
                         // Initial check after first load
-                        if (buttonIsVisible.value) {
+                        while (buttonIsVisible.value) {
                             await getNextPage()
                         }
                     })
