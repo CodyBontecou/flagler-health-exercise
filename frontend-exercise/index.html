@@ -197,6 +197,14 @@
                 return optimizedRows
             }
 
+            const checkButtonVisibility = (element, buffer = 100) => {
+                const rect = element?.getBoundingClientRect()
+                return rect
+                    ? rect.top <= window.innerHeight + buffer &&
+                          rect.bottom >= -buffer
+                    : false
+            }
+
             createApp({
                 setup() {
                     const columns = 3
@@ -221,27 +229,28 @@
                             length: d.length,
                             data: [...data.value.data, ...d.data],
                         }
+
+                        // Check visibility again after DOM updates
+                        const loadButton = document.querySelector('#load')
+                        if (
+                            checkButtonVisibility(loadButton) &&
+                            lastFetchedIndex.value < data.value.length
+                        ) {
+                            await getNextPage() // Recursively load until hidden
+                        }
                     }
 
                     onMounted(async () => {
                         await getNextPage()
 
                         const loadButton = document.querySelector('#load')
-                        const observer = new IntersectionObserver(
-                            entries => {
-                                entries.forEach(entry => {
-                                    buttonIsVisible.value = entry.isIntersecting
-                                })
-                            },
-                            { rootMargin: '100px' }
-                        )
+                        const observer = new IntersectionObserver(entries => {
+                            entries.forEach(entry => {
+                                buttonIsVisible.value = entry.isIntersecting
+                            })
+                        })
 
                         observer.observe(loadButton)
-
-                        // Initial check after first load
-                        while (buttonIsVisible.value) {
-                            await getNextPage()
-                        }
                     })
 
                     watch(buttonIsVisible, () => getNextPage())
