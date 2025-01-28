@@ -4,8 +4,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Front End Exercise</title>
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-        <script src="https://unpkg.com/@vueuse/shared"></script>
-        <script src="https://unpkg.com/@vueuse/core"></script>
 
         <style type="text/css">
             html {
@@ -206,8 +204,7 @@
                     const pageSize = 10
                     const lastFetchedIndex = ref(0)
                     const data = ref({ length: 0, data: [] })
-                    const loadButton = useTemplateRef('loadButton')
-                    const buttonIsVisible = useElementVisibility(loadButton)
+                    const buttonIsVisible = ref(false)
 
                     const sortedData = computed(() => {
                         const initialLayout = createInitialRows(data.value.data)
@@ -219,8 +216,8 @@
                             lastFetchedIndex.value,
                             lastFetchedIndex.value + pageSize
                         )
-                        lastFetchedIndex.value =
-                            lastFetchedIndex.value + d.data.length
+
+                        lastFetchedIndex.value += d.data.length
                         data.value = {
                             length: d.length,
                             data: [...data.value.data, ...d.data],
@@ -230,6 +227,19 @@
                     onMounted(async () => {
                         await getNextPage()
 
+                        const loadButton = document.querySelector('#load')
+                        const observer = new IntersectionObserver(
+                            entries => {
+                                entries.forEach(entry => {
+                                    buttonIsVisible.value = entry.isIntersecting
+                                })
+                            },
+                            { rootMargin: '100px' }
+                        )
+
+                        observer.observe(loadButton)
+
+                        // Initial check after first load
                         if (buttonIsVisible.value) {
                             await getNextPage()
                         }
