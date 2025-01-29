@@ -27,9 +27,10 @@
             }
 
             .grid-item {
-                padding: 10px;
                 background: hsla(197, 100%, 63%, 1);
                 border-radius: 15px;
+                --span: 1;
+                aspect-ratio: var(--span) / 1;
 
                 display: flex;
                 align-items: center;
@@ -82,7 +83,7 @@
                 >
                     <div
                         v-if="cell"
-                        :style="{ 'grid-column': `span ${cell.span}` }"
+                        :style="{ 'grid-column': `span ${cell.span}`, '--span': cell.span }"
                         class="grid-item"
                     >
                         {{ cell.id }}
